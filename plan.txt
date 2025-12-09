@@ -1,1 +1,188 @@
-hi jake
+
+
+=== HABIT TRACKER APP - DETAILED PLAN ===
+
+FRONTEND:
+---------
+1. Login Page
+   - OAuth2 (Google & GitHub)
+   - Fallback: Email/password registration
+   - Redirect to home after auth
+
+2. Home Page (Dashboard)
+   - Calendar view (current month, highlight completed habits)
+   - Show habits for today
+   - Quick "Mark Complete" buttons for each habit
+   - Daily coins earned display
+   - Current coin balance
+   - Navigation to create habit, store, support, profile
+
+3. Create/Edit Habit Page
+   - Form: habit name, description, frequency (daily/weekly)
+   - Coin reward per completion
+   - Color/icon selection
+   - Save & redirect to home
+
+4. Habit Store Page
+   - Browse items available for purchase with coins
+   - Item details: name, description, cost in coins
+   - "Buy" button (if user has enough coins)
+   - Option to purchase coins with real money (Stripe integration)
+   - Display user's current coin balance
+
+5. Support/Feedback Page
+   - Contact form: email, subject, message
+   - Submit feedback to admin email
+   - Confirmation message
+
+6. Profile Page (optional)
+   - View user info
+   - See habit stats (total completed, streak)
+   - Logout button
+
+Templates:
+- base.html (nav, header, footer)
+- login.html
+- home.html
+- create_habit.html
+- habit_store.html
+- support.html
+- profile.html
+- error.html
+
+BACKEND:
+--------
+Database Models:
+1. User
+   - id (PK)
+   - email (unique)
+   - username
+   - oauth_id (for OAuth login)
+   - coins (balance)
+   - created_at
+   - updated_at
+
+2. Habit
+   - id (PK)
+   - user_id (FK)
+   - name
+   - description
+   - frequency (daily/weekly/custom)
+   - coin_reward (coins earned per completion)
+   - color/icon
+   - created_at
+   - is_active
+
+3. HabitLog
+   - id (PK)
+   - habit_id (FK)
+   - user_id (FK)
+   - completed_date
+   - coins_earned
+   - created_at
+
+4. StoreItem
+   - id (PK)
+   - name
+   - description
+   - price (in coins)
+   - image_url
+   - created_at
+
+5. UserPurchase
+   - id (PK)
+   - user_id (FK)
+   - item_id (FK)
+   - purchased_at
+   - coins_spent
+
+6. CoinTransaction
+   - id (PK)
+   - user_id (FK)
+   - amount (positive/negative)
+   - transaction_type (earned/purchased/spent)
+   - related_id (habit_id or item_id)
+   - created_at
+
+7. Feedback
+   - id (PK)
+   - user_id (FK, nullable for anonymous)
+   - email
+   - subject
+   - message
+   - created_at
+   - is_resolved
+
+File Structure:
+---------------
+project/
+├── app.py (Flask app initialization)
+├── config.py (database URL, OAuth keys, environment vars)
+├── auth.py (OAuth login/logout, session management)
+├── models.py (SQLAlchemy models)
+├── routes.py (all endpoints)
+├── db.py (database initialization)
+├── requirements.txt
+├── .env (secrets - not in git)
+├── .gitignore
+├── templates/
+│   ├── base.html
+│   ├── login.html
+│   ├── home.html
+│   ├── create_habit.html
+│   ├── habit_store.html
+│   ├── support.html
+│   ├── profile.html
+│   └── error.html
+├── static/
+│   ├── css/
+│   │   └── style.css
+│   └── js/
+│       └── script.js
+└── README.md
+
+API Endpoints:
+--------------
+AUTH:
+- POST /auth/login (OAuth redirect)
+- GET /auth/callback (OAuth callback)
+- POST /auth/logout
+
+HABITS:
+- GET /habits (list user's habits)
+- POST /habits (create habit)
+- GET /habits/<id> (view habit)
+- PUT /habits/<id> (edit habit)
+- DELETE /habits/<id> (delete habit)
+- POST /habits/<id>/complete (mark complete & award coins)
+
+STORE:
+- GET /store (list items)
+- POST /store/<item_id>/buy (purchase item with coins)
+- POST /coins/purchase (buy coins with payment)
+
+FEEDBACK:
+- POST /support (submit feedback)
+
+PROFILE:
+- GET /profile (user info & stats)
+- PUT /profile (update user)
+
+COIN SYSTEM:
+-----------
+- User starts with 0 coins
+- Each completed habit = X coins (set per habit, default 5)
+- Streaks: bonus coins on day 7, 30, 100
+- Store items: 10-100 coins each
+- Premium coins: real money via Stripe (optional MVP feature)
+- Transaction log tracks all coin movements
+
+TECH STACK:
+-----------
+Backend: Flask, SQLAlchemy, PostgreSQL
+Auth: Flask-Login, Authlib (OAuth)
+Payments: Stripe (optional)
+Frontend: Jinja2, HTML/CSS, vanilla JS or Bootstrap
+Deployment: Heroku/Railway (optional)
+
+

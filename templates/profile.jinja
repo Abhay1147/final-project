@@ -1,0 +1,45 @@
+{% extends "base.jinja" %}
+
+{% block title %}Profile - Habit Tracker{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+            <h1><i class="fas fa-user-circle"></i> Profile</h1>
+            
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">User Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Username:</strong> {{ current_user.username }}</p>
+                            <p><strong>Email:</strong> {{ current_user.email }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Coins Balance:</strong> <span class="badge bg-warning text-dark">{{ current_user.coins }}</span></p>
+                            <p><strong>Member Since:</strong> {{ current_user.created_at.strftime('%B %d, %Y') }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Habits Completed:</strong> {{ total_completed }}</p>
+                            <p><strong>Total Coins Earned:</strong> {{ total_coins_earned }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

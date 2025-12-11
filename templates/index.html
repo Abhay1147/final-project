@@ -12,7 +12,7 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container-fluid">
-            <a class="navbar-brand" href="#" onclick="showHome()">
+            <a class="navbar-brand" href="#" onclick="controller && controller.showHome(); return false;">
                 <i class="fas fa-check-circle"></i> Habit Tracker
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -21,31 +21,31 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item" id="nav-home" style="display: none;">
-                        <a class="nav-link" href="#" onclick="showHome()">Home</a>
+                        <a class="nav-link" href="#" onclick="controller && controller.showHome(); return false;">Home</a>
                     </li>
                     <li class="nav-item" id="nav-create" style="display: none;">
-                        <a class="nav-link" href="#" onclick="showCreateHabit()">+ New Habit</a>
+                        <a class="nav-link" href="#" onclick="controller && controller.showCreateHabit(); return false;">+ New Habit</a>
                     </li>
                     <li class="nav-item" id="nav-store" style="display: none;">
-                        <a class="nav-link" href="#" onclick="showStore()">
+                        <a class="nav-link" href="#" onclick="controller && controller.showStore(); return false;">
                             <i class="fas fa-store"></i> Store
                         </a>
                     </li>
                     <li class="nav-item" id="nav-support" style="display: none;">
-                        <a class="nav-link" href="#" onclick="showSupport()">Support</a>
+                        <a class="nav-link" href="#" onclick="controller && controller.showSupport(); return false;">Support</a>
                     </li>
                     <li class="nav-item dropdown" id="nav-profile" style="display: none;">
                         <a class="nav-link dropdown-toggle" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-user-circle"></i> <span id="username">User</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
-                            <li><a class="dropdown-item" href="#" onclick="showProfile()">Profile</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="controller && controller.showProfile(); return false;">Profile</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#" onclick="logout()">Logout</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="controller && controller.logout(); return false;">Logout</a></li>
                         </ul>
                     </li>
                     <li class="nav-item" id="nav-login">
-                        <a class="nav-link" href="#" onclick="showLogin()">Login</a>
+                        <a class="nav-link" href="#" onclick="controller && controller.showLogin(); return false;">Login</a>
                     </li>
                 </ul>
             </div>

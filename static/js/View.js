@@ -71,7 +71,7 @@ class HabitTrackerView {
                         </form>
                         
                         <p class="text-center">
-                            Don't have an account? <a href="#" onclick="controller.showRegister()">Sign up</a>
+                            Don't have an account? <a href="#" onclick="controller && controller.showRegister(); return false;">Sign up</a>
                         </p>
                     </div>
                 </div>
@@ -103,7 +103,7 @@ class HabitTrackerView {
                         </form>
                         
                         <p class="text-center mt-3">
-                            Already have an account? <a href="#" onclick="controller.showLogin()">Login</a>
+                            Already have an account? <a href="#" onclick="controller && controller.showLogin(); return false;">Login</a>
                         </p>
                     </div>
                 </div>
@@ -137,7 +137,7 @@ class HabitTrackerView {
             container.innerHTML = `
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle"></i> No habits yet. 
-                    <a href="#" onclick="controller.showCreateHabit()" class="alert-link">Create your first habit!</a>
+                    <a href="#" onclick="controller && controller.showCreateHabit(); return false;" class="alert-link">Create your first habit!</a>
                 </div>
             `;
             return;
@@ -165,7 +165,7 @@ class HabitTrackerView {
                                                 </span>
                                             </div>
                                             <button class="btn btn-sm ${habit.completed_today ? 'btn-success' : 'btn-outline-success'}" 
-                                                    onclick="controller.completeHabit(${habit.id})" 
+                                                    onclick="controller && controller.completeHabit(${habit.id}); return false;" 
                                                     ${habit.completed_today ? 'disabled' : ''}>
                                                 <i class="fas fa-check"></i> ${habit.completed_today ? 'Done!' : 'Complete'}
                                             </button>
@@ -222,7 +222,7 @@ class HabitTrackerView {
                                     </div>
                                 </div>
                                 <button type="submit" class="btn btn-primary">Create Habit</button>
-                                <button type="button" class="btn btn-secondary" onclick="controller.showHome()">Cancel</button>
+                                <button type="button" class="btn btn-secondary" onclick="controller && controller.showHome(); return false;">Cancel</button>
                             </form>
                         </div>
                     </div>

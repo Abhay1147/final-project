@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def create_app(config_name='development'):
-    app = Flask(__name__, template_folder='templates')
+    app = Flask(__name__, template_folder='templates', static_folder='static')
     
     # Configure based on environment
     if config_name == 'development':
@@ -35,12 +35,10 @@ def create_app(config_name='development'):
     with app.app_context():
         db.create_all()
     
-    # Routes
+    # Main route - serve index.html
     @app.route('/')
     def index():
-        if current_user.is_authenticated:
-            return redirect(url_for('home'))
-        return redirect(url_for('login'))
+        return render_template('index.html')
     
     @app.route('/home')
     @login_required
@@ -97,52 +95,89 @@ def create_app(config_name='development'):
             weekly_completion_data=json.dumps(weekly_completion_data)
         )
     
-    @app.route('/login', methods=['GET', 'POST'])
+    @app.route('/api/auth/login', methods=['POST'])
+    def api_login():
+        """API endpoint for user login"""
+        data = request.get_json()
+        email = data.get('email')
+        password = data.get('password')
+        
+        if not email or not password:
+            return jsonify({'success': False, 'error': 'Missing email or password'}), 400
+        
+        user = User.query.filter_by(email=email).first()
+        
+        if user and user.check_password(password):
+            login_user(user)
+            return jsonify({
+                'success': True,
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'coins': user.coins
+                }
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Invalid email or password'}), 401
+    
+    @app.route('/api/auth/register', methods=['POST'])
+    def api_register():
+        """API endpoint for user registration"""
+        data = request.get_json()
+        email = data.get('email')
+        username = data.get('username')
+        password = data.get('password')
+        
+        if not email or not username or not password:
+            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+        
+        if User.query.filter_by(email=email).first():
+            return jsonify({'success': False, 'error': 'Email already registered'}), 409
+        
+        user = User(email=email, username=username)
+        user.set_password(password)
+        db.session.add(user)
+        db.session.commit()
+        
+        login_user(user)
+        return jsonify({
+            'success': True,
+            'message': 'Registration successful!',
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'coins': user.coins
+            }
+        }), 201
+    
+    @app.route('/api/auth/logout', methods=['POST'])
+    @login_required
+    def api_logout():
+        """API endpoint for user logout"""
+        logout_user()
+        return jsonify({'success': True, 'message': 'Logged out successfully'})
+    
+    @app.route('/api/auth/current-user')
+    @login_required
+    def api_current_user():
+        """Get current user info"""
+        return jsonify({
+            'success': True,
+            'user': {
+                'id': current_user.id,
+                'username': current_user.username,
+                'email': current_user.email,
+                'coins': current_user.coins
+            }
+        })
+    
+    @app.route('/login')
     def login():
         if current_user.is_authenticated:
-            return redirect(url_for('home'))
-        
-        if request.method == 'POST':
-            email = request.form.get('email')
-            password = request.form.get('password')
-            user = User.query.filter_by(email=email).first()
-            
-            if user and user.check_password(password):
-                login_user(user)
-                flash('Login successful!', 'success')
-                return redirect(url_for('home'))
-            else:
-                flash('Invalid email or password.', 'error')
-        
-        return render_template('login.jinja')
-    
-    @app.route('/logout')
-    @login_required
-    def logout():
-        logout_user()
-        flash('You have been logged out.', 'success')
-        return redirect(url_for('login'))
-    
-    @app.route('/register', methods=['GET', 'POST'])
-    def register():
-        if request.method == 'POST':
-            email = request.form.get('email')
-            username = request.form.get('username')
-            password = request.form.get('password')
-            
-            if User.query.filter_by(email=email).first():
-                flash('Email already registered.', 'error')
-                return redirect(url_for('register'))
-            
-            user = User(email=email, username=username)
-            user.set_password(password)
-            db.session.add(user)
-            db.session.commit()
-            
-            flash('Registration successful! Please log in.', 'success')
-            return redirect(url_for('login'))
-        
-        return render_template('register.jinja')
+            return redirect(url_for('index'))
+        return render_template('index.html')
     
     @app.route('/habits', methods=['GET', 'POST'])
     @login_required
@@ -191,14 +226,14 @@ def create_app(config_name='development'):
     def create_habit():
         return render_template('create_habit.jinja')
     
-    @app.route('/habit/<int:habit_id>/complete', methods=['POST'])
+    @app.route('/api/habits/<int:habit_id>/complete', methods=['POST'])
     @login_required
-    def complete_habit(habit_id):
+    def api_complete_habit(habit_id):
+        """API endpoint to complete a habit"""
         habit = Habit.query.get_or_404(habit_id)
         
         if habit.user_id != current_user.id:
-            flash('Unauthorized action.', 'error')
-            return redirect(url_for('home'))
+            return jsonify({'success': False, 'error': 'Unauthorized'}), 403
         
         today = datetime.utcnow().date()
         existing_log = HabitLog.query.filter_by(
@@ -208,71 +243,95 @@ def create_app(config_name='development'):
         ).first()
         
         if existing_log:
-            flash('You already completed this habit today!', 'info')
-        else:
-            log = HabitLog(
-                habit_id=habit_id,
-                user_id=current_user.id,
-                completed_date=today,
-                coins_earned=habit.coin_reward
-            )
-            db.session.add(log)
-            
-            current_user.coins += habit.coin_reward
-            
-            transaction = CoinTransaction(
-                user_id=current_user.id,
-                amount=habit.coin_reward,
-                transaction_type='earned',
-                related_id=habit_id
-            )
-            db.session.add(transaction)
-            db.session.commit()
-            
-            flash(f'Great! You earned {habit.coin_reward} coins!', 'success')
+            return jsonify({'success': False, 'error': 'You already completed this habit today!'}), 400
         
-        return redirect(url_for('home'))
-    
-    @app.route('/store')
-    @login_required
-    def store():
-        items = StoreItem.query.all()
-        return render_template('store.jinja', items=items, user_coins=current_user.coins)
-    
-    @app.route('/support', methods=['GET', 'POST'])
-    def support():
-        if request.method == 'POST':
-            email = request.form.get('email')
-            subject = request.form.get('subject')
-            message = request.form.get('message')
-            
-            feedback = Feedback(
-                user_id=current_user.id if current_user.is_authenticated else None,
-                email=email,
-                subject=subject,
-                message=message
-            )
-            db.session.add(feedback)
-            db.session.commit()
-            
-            flash('Thank you for your feedback!', 'success')
-            return redirect(url_for('home') if current_user.is_authenticated else url_for('login'))
-        
-        return render_template('support.jinja')
-    
-    @app.route('/profile')
-    @login_required
-    def profile():
-        total_completed = HabitLog.query.filter_by(user_id=current_user.id).count()
-        total_coins_earned = sum(log.coins_earned for log in current_user.habit_logs)
-        
-        return render_template(
-            'profile.jinja',
-            total_completed=total_completed,
-            total_coins_earned=total_coins_earned
+        log = HabitLog(
+            habit_id=habit_id,
+            user_id=current_user.id,
+            completed_date=today,
+            coins_earned=habit.coin_reward
         )
+        db.session.add(log)
+        
+        current_user.coins += habit.coin_reward
+        
+        transaction = CoinTransaction(
+            user_id=current_user.id,
+            amount=habit.coin_reward,
+            transaction_type='earned',
+            related_id=habit_id
+        )
+        db.session.add(transaction)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Great! You earned {habit.coin_reward} coins!',
+            'coins_earned': habit.coin_reward,
+            'user': {
+                'id': current_user.id,
+                'username': current_user.username,
+                'email': current_user.email,
+                'coins': current_user.coins
+            }
+        })
     
-    # API Routes for Comments
+    @app.route('/api/store', methods=['GET'])
+    @login_required
+    def api_store():
+        """API endpoint to get store items"""
+        items = StoreItem.query.all()
+        items_data = [{
+            'id': item.id,
+            'name': item.name,
+            'description': item.description,
+            'price': item.price,
+            'image_url': item.image_url
+        } for item in items]
+        
+        return jsonify({'success': True, 'items': items_data})
+    
+    @app.route('/api/support', methods=['POST'])
+    def api_support():
+        """API endpoint to submit feedback"""
+        data = request.get_json()
+        email = data.get('email')
+        subject = data.get('subject')
+        message = data.get('message')
+        
+        if not email or not subject or not message:
+            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+        
+        feedback = Feedback(
+            user_id=current_user.id if current_user.is_authenticated else None,
+            email=email,
+            subject=subject,
+            message=message
+        )
+        db.session.add(feedback)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Thank you for your feedback!'})
+    
+    @app.route('/api/profile', methods=['GET'])
+    @login_required
+    def api_profile():
+        """API endpoint to get user profile"""
+        total_completed = HabitLog.query.filter_by(user_id=current_user.id).count()
+        total_coins_earned = sum(log.coins_earned for log in current_user.habit_logs) if current_user.habit_logs else 0
+        
+        return jsonify({
+            'success': True,
+            'user': {
+                'id': current_user.id,
+                'username': current_user.username,
+                'email': current_user.email,
+                'coins': current_user.coins
+            },
+            'total_completed': total_completed,
+            'total_coins_earned': total_coins_earned
+        })
+    
     @app.route('/api/comments/habit/<int:habit_id>', methods=['GET'])
     @login_required
     def get_habit_comments(habit_id):
@@ -374,11 +433,11 @@ def create_app(config_name='development'):
     
     @app.errorhandler(404)
     def not_found(error):
-        return render_template('error.jinja', error='Page not found'), 404
+        return jsonify({'success': False, 'error': 'Page not found'}), 404
     
     @app.errorhandler(500)
     def server_error(error):
-        return render_template('error.jinja', error='Server error'), 500
+        return jsonify({'success': False, 'error': 'Server error'}), 500
     
     return app
 

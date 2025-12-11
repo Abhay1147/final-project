@@ -20,8 +20,6 @@ class User(UserMixin, db.Model):
     # Relationships
     habits = db.relationship('Habit', backref='user', lazy=True, cascade='all, delete-orphan')
     habit_logs = db.relationship('HabitLog', backref='user', lazy=True, cascade='all, delete-orphan')
-    purchases = db.relationship('UserPurchase', backref='user', lazy=True, cascade='all, delete-orphan')
-    transactions = db.relationship('CoinTransaction', backref='user', lazy=True, cascade='all, delete-orphan')
     feedback = db.relationship('Feedback', backref='user', lazy=True, cascade='all, delete-orphan')
     
     def set_password(self, password):
@@ -50,7 +48,6 @@ class Habit(db.Model):
     # Relationships
     logs = db.relationship('HabitLog', backref='habit', lazy=True, cascade='all, delete-orphan')
     comments = db.relationship('Comment', backref='habit', foreign_keys='Comment.habit_id', lazy=True, cascade='all, delete-orphan')
-    comments = db.relationship('Comment', backref='habit', lazy=True, cascade='all, delete-orphan')
 
 
 class HabitLog(db.Model):
@@ -70,32 +67,8 @@ class StoreItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     description = db.Column(db.Text, nullable=True)
-    price = db.Column(db.Integer, nullable=False)  # price in coins
+    price = db.Column(db.Integer, nullable=False)
     image_url = db.Column(db.String(255), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relationships
-    purchases = db.relationship('UserPurchase', backref='item', lazy=True, cascade='all, delete-orphan')
-
-
-class UserPurchase(db.Model):
-    __tablename__ = 'user_purchases'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    item_id = db.Column(db.Integer, db.ForeignKey('store_items.id'), nullable=False)
-    purchased_at = db.Column(db.DateTime, default=datetime.utcnow)
-    coins_spent = db.Column(db.Integer, nullable=False)
-
-
-class CoinTransaction(db.Model):
-    __tablename__ = 'coin_transactions'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    amount = db.Column(db.Integer, nullable=False)  # positive or negative
-    transaction_type = db.Column(db.String(50), nullable=False)  # earned, purchased, spent
-    related_id = db.Column(db.Integer, nullable=True)  # habit_id or item_id
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 

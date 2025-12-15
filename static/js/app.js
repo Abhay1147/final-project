@@ -72,6 +72,21 @@ class HabitTrackerApp {
                 }
             }
         }
+        
+        // Add button click handlers
+        const navHome = document.getElementById('nav-home');
+        const navCreate = document.getElementById('nav-create');
+        const navFeed = document.getElementById('nav-feed');
+        const navProfile = document.getElementById('nav-profile');
+        const navSupport = document.getElementById('nav-support');
+        const navLogout = document.getElementById('nav-logout');
+        
+        if (navHome) navHome.onclick = () => this.showHome();
+        if (navCreate) navCreate.onclick = () => this.showCreateHabit();
+        if (navFeed) navFeed.onclick = () => this.showFeed();
+        if (navProfile) navProfile.onclick = () => this.showProfile();
+        if (navSupport) navSupport.onclick = () => this.showSupport();
+        if (navLogout) navLogout.onclick = () => this.logout();
     }
 
     attachEvents() {

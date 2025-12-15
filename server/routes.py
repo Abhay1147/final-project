@@ -45,60 +45,34 @@ def register_routes(app):
     # GOOGLE OAUTH
     @app.route('/auth/google')
     def login_with_google():
-        return app.google.authorize(callback=url_for('oauth_callback', _external=True))
+        redirect_uri = url_for('oauth_callback', _external=True)
+        return app.google.authorize_redirect(redirect_uri)
     
     @app.route('/auth/google/callback')
     def oauth_callback():
-        print("OAuth callback called!")
         try:
-            # Disable SSL verification only in development (local testing)
-            # This is safe because it's only used locally
-            # In production (PythonAnywhere), proper SSL certs are used
-            if app.config['DEBUG']:
-                import ssl
-                ssl._create_default_https_context = ssl._create_unverified_context
+            token = app.google.authorize_access_token()
+            user_info = token.get('userinfo')
             
-            resp = app.google.authorized_response()
-            print(f"Response from Google: {resp}")
-            
-            if resp is None:
-                print("Response is None - checking for error")
-                error = request.args.get('error')
-                error_description = request.args.get('error_description')
-                print(f"Error: {error}, Description: {error_description}")
+            if not user_info:
                 return redirect('/')
             
-            if isinstance(resp, dict) and 'access_token' in resp:
-                access_token = resp['access_token']
-                print(f"Got access token: {access_token[:20]}...")
-                
-                # Get user info from Google using the access token
-                import requests
-                headers = {'Authorization': f'Bearer {access_token}'}
-                user_response = requests.get('https://www.googleapis.com/oauth2/v1/userinfo', headers=headers)
-                user_info = user_response.json()
-                
-                print(f"User info: {user_info}")
-                
-                # Find or create user
-                user = User.query.filter_by(email=email).first()
-                if not user:
-                    user = User(email=email, username=username)
-                    user.set_password('oauth-' + os.urandom(16).hex())
-                    db.session.add(user)
-                    db.session.commit()
-                    print(f"Created new user: {email}")
-                
-                login_user(user)
-                print(f"Logged in: {email}")
+            email = user_info.get('email', '').lower()
+            username = user_info.get('name', email.split('@')[0] if email else 'user')
+            
+            if not email:
                 return redirect('/')
-            else:
-                print(f"Unexpected response format: {resp}")
-                return redirect('/')
+            
+            user = User.query.filter_by(email=email).first()
+            if not user:
+                user = User(email=email, username=username)
+                user.set_password('oauth-' + os.urandom(16).hex())
+                db.session.add(user)
+                db.session.commit()
+            
+            login_user(user)
+            return redirect('/')
         except Exception as e:
-            print(f"OAuth error: {e}")
-            import traceback
-            traceback.print_exc()
             return redirect('/')
     
     @app.route('/api/auth/current-user')

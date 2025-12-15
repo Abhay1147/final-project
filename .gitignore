@@ -1,10 +1,13 @@
-*.pyc
-__pycache__/
 .env
-.venv
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+habit_tracker.db
+static/uploads/
+.venv/
 venv/
 instance/
-.DS_Store
 *.db
 *.sqlite
 .vscode/

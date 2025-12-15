@@ -12,3 +12,4 @@ instance/
 *.log
 node_modules/
 .env.local
+sendgrid.env

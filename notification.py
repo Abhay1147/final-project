@@ -3,7 +3,10 @@
 import os
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
+from dotenv import load_dotenv
 
+
+load_dotenv("sendgrid.env")
 message = Mail(
     from_email='habittracker67@gmail.com',
     to_emails='chhaab01@luther.edu',

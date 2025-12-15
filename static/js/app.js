@@ -18,7 +18,14 @@ class HabitTrackerApp {
                 this.currentUser = data.user;
                 this.updateNav(true);
                 const page = localStorage.getItem('lastPage') || 'home';
-                this[`show${page[0].toUpperCase() + page.slice(1)}`]?.();
+                // Handle admin page specially
+                if (page === 'admin' && this.currentUser.is_admin) {
+                    this.showAdminPanel();
+                } else if (page === 'createhabit') {
+                    this.showCreateHabit();
+                } else {
+                    this[`show${page[0].toUpperCase() + page.slice(1)}`]?.();
+                }
             } else {
                 this.showLogin();
             }

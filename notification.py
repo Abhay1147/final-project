@@ -48,3 +48,5 @@ try:
 except Exception as e:
     print(type(e))
     print(e)
+
+print("Notification sent!")

@@ -3,6 +3,7 @@ from flask import request, jsonify, redirect, url_for, session
 from flask_login import login_user, logout_user, login_required, current_user
 from server.models import db, User, HabitLog, Feedback, Comment, Habit
 from server.logic import HabitLogic, FeedLogic
+from .notifications.service import send_notification
 import os
 import base64
 from datetime import datetime
@@ -33,7 +34,11 @@ def register_routes(app):
         user.set_password(data.get('password'))
         db.session.add(user)
         db.session.commit()
+
+        send_notification(user, "USER_REGISTERED", {"username": user.username})
+
         login_user(user)
+
         return jsonify({'success': True, 'user': {'id': user.id, 'username': user.username, 'email': user.email, 'coins': user.coins, 'is_admin': getattr(user, 'is_admin', False)}}), 201
     
     @app.route('/api/auth/logout', methods=['POST'])
@@ -183,6 +188,8 @@ def register_routes(app):
         comment, error = FeedLogic.add_comment(current_user.id, log_id, content)
         if error:
             return jsonify({'success': False, 'error': error}), 400
+
+        
         return jsonify({'success': True, 'message': 'Comment posted! (1 coin spent)', 'comment': {'id': comment.id, 'author': comment.author.username, 'content': comment.content, 'created_at': comment.created_at.strftime('%Y-%m-%d %H:%M:%S'), 'is_owner': True}, 'user': {'id': current_user.id, 'coins': current_user.coins}}), 201
     
     @app.route('/api/feed/<int:log_id>/comment/<int:comment_id>', methods=['DELETE'])

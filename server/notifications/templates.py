@@ -44,10 +44,24 @@ def post_created(ctx):
         """
     )
 
+# --- SUPPORT RECEIVED (new template) ---
+def support_received(context):
+    return (
+        "New Support Request from Habit Tracker",
+        f"""
+        <h2>New Support Request</h2>
+        <p><strong>From:</strong> {context.get('user_email', 'Unknown')}</p>
+        <p><strong>Subject:</strong> {context.get('subject', 'No subject')}</p>
+        <p><strong>Message:</strong></p>
+        <p>{context.get('message', 'No message')}</p>
+        """
+    )
+
 # Dictionary of templates
 TEMPLATES = {
     "USER_REGISTERED": user_registered,
     "COMMENT_ON_POST": comment_on_post,
     "STREAK_MILESTONE": streak_milestone,
     "POST_CREATED": post_created,
+    'SUPPORT_RECEIVED': support_received,
 }

@@ -1,7 +1,9 @@
-Flask==2.3.0
-Flask-SQLAlchemy==3.0.0
-Flask-Login==0.6.2
+Flask==3.0.0
+Flask-SQLAlchemy==3.1.1
+Flask-Login==0.6.3
+Werkzeug==3.0.0
+SQLAlchemy==2.0.23
+authlib==1.2.1
 python-dotenv==1.0.0
-Werkzeug==2.3.0
-authlib==1.2.0
 requests==2.31.0
+sendgrid==6.10.0

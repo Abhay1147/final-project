@@ -202,7 +202,7 @@ class HabitTrackerApp {
             container.innerHTML = '<div class="notification is-info"><strong>No habits yet.</strong> <a href="#" onclick="app.showCreateHabit(); return false;">Create one!</a></div>';
             return;
         }
-        container.innerHTML = `<div class="box"><h2 class="title is-5"><i class="fas fa-list-check"></i> Your Habits</h2><div class="columns is-multiline">${habits.map(h => `<div class="column is-half"><div class="habit-card" style="border-left-color: ${h.color};"><div class="mb-3"><h3 class="title is-6"><i class="fas ${h.icon}"></i> ${h.name}</h3><p class="subtitle is-7 has-text-grey">${h.description}</p><div class="mb-2"><span class="tag is-light"><i class="fas fa-coins"></i>&nbsp;+${h.coin_reward}</span><span class="tag is-info"><i class="fas fa-fire"></i>&nbsp;${h.current_streak || 0} day streak</span><span class="tag is-warning"><i class="fas fa-crown"></i>&nbsp;Best: ${h.longest_streak || 0}</span></div></div><div class="mt-3"><button class="button ${h.completed_today ? 'is-success is-loading' : 'is-info'} is-small" onclick="app.showCompleteModal(${h.id}); return false;" ${h.completed_today ? 'disabled' : ''}><span class="icon is-small"><i class="fas fa-check"></i></span><span>${h.completed_today ? 'Done Today!' : 'Complete'}</span></button><button class="button is-danger is-small is-outlined" onclick="app.deleteHabit(${h.id}); return false;"><span class="icon is-small"><i class="fas fa-trash"></i></span></button></div></div></div>`).join('')}</div></div>`;
+        container.innerHTML = `<div class="box"><h2 class="title is-5"><i class="fas fa-list-check"></i> Your Habits</h2><div class="columns is-multiline">${habits.map(h => `<div class="column is-half"><div class="habit-card" style="border-left-color: ${h.color};"><div class="mb-3"><h3 class="title is-6"><i class="fas ${h.icon}"></i> ${h.name}</h3><p class="subtitle is-7 has-text-grey">${h.description}</p><div class="mb-2"><span class="tag is-light"><i class="fas fa-coins"></i>&nbsp;+${h.coin_reward}</span><span class="tag is-info"><i class="fas fa-fire"></i>&nbsp;${h.current_streak || 0} day streak</span><span class="tag is-warning"><i class="fas fa-crown"></i>&nbsp;Best: ${h.longest_streak || 0}</span></div></div><div class="mt-3"><button class="button ${h.completed_today ? 'is-success' : 'is-info'} is-small" onclick="app.showCompleteModal(${h.id}); return false;" ${h.completed_today ? 'disabled' : ''}><span class="icon is-small"><i class="fas fa-check"></i></span><span>${h.completed_today ? 'Done Today!' : 'Complete'}</span></button><button class="button is-danger is-small is-outlined" onclick="app.deleteHabit(${h.id}); return false;"><span class="icon is-small"><i class="fas fa-trash"></i></span></button></div></div></div>`).join('')}</div></div>`;
     }
 
     renderCompletedLogs(logs) {
@@ -218,7 +218,7 @@ class HabitTrackerApp {
     showCreateHabit() {
         localStorage.setItem('lastPage', 'createhabit');
         if (!this.currentUser) return;
-        document.getElementById('app-content').innerHTML = `<div class="columns"><div class="column is-half"><h1 class="title"><i class="fas fa-plus-circle"></i> Create Habit</h1><form id="create-habit-form"><div class="field"><label class="label">Habit Name</label><div class="control"><input class="input" type="text" id="name" required></div></div><div class="field"><label class="label">Description</label><div class="control"><textarea class="textarea" id="description" rows="3"></textarea></div></div><div class="field"><label class="label">Frequency</label><div class="control"><div class="select"><select id="frequency"><option value="daily">Daily</option><option value="weekly">Weekly</option></select></div></div></div><div class="field"><label class="label">Color</label><div class="control"><input class="input" type="color" id="color" value="#007bff"></div></div><div class="field"><label class="label">Icon (Font Awesome)</label><div class="control"><input class="input" type="text" id="icon" value="fa-circle"></div></div><div class="notification is-info"><strong>💰 Reward: 10 coins</strong> (fixed)</div><div class="field is-grouped"><div class="control"><button class="button is-primary" type="submit">Create</button></div><div class="control"><button class="button is-light" type="button" onclick="app.showHome(); return false;">Cancel</button></div></div></form></div></div>`;
+        document.getElementById('app-content').innerHTML = `<div class="columns"><div class="column is-half"><h1 class="title"><i class="fas fa-plus-circle"></i> Create Habit</h1><form id="create-habit-form"><div class="field"><label class="label">Habit Name</label><div class="control"><input class="input" type="text" id="name" required></div></div><div class="field"><label class="label">Description</label><div class="control"><textarea class="textarea" id="description" rows="3"></textarea></div></div><div class="field"><label class="label">Frequency</label><div class="control"><div class="select"><select id="frequency"><option value="daily">Daily</option><option value="weekly">Weekly</option></select></div></div></div><div class="field"><label class="label">Color</label><div class="control"><input class="input" type="color" id="color" value="#007bff"></div></div><div class="field"><label class="label">Icon</label><div class="control"><div class="select"><select id="icon"><option value="fa-circle">● Circle</option><option value="fa-star">⭐ Star</option><option value="fa-square">■ Square</option><option value="fa-triangle">▲ Triangle</option><option value="fa-heart">❤ Heart</option></select></div></div></div><div class="notification is-info"><strong>💰 Reward: 10 coins</strong> (fixed)</div><div class="field is-grouped"><div class="control"><button class="button is-primary" type="submit">Create</button></div><div class="control"><button class="button is-light" type="button" onclick="app.showHome(); return false;">Cancel</button></div></div></form></div></div>`;
     }
 
     async showProfile() {
@@ -395,29 +395,16 @@ class HabitTrackerApp {
 
         // Complete handler
         document.getElementById('completeBtn').onclick = async () => {
-            console.log('Complete clicked for habit:', habitId);
-            console.log('Selected image:', self.selectedImage ? 'Yes' : 'No');
-            
             try {
-                const completeBtn = document.getElementById('completeBtn');
-                completeBtn.disabled = true;
-                completeBtn.classList.add('is-loading');
-                
                 const res = await fetch(`/api/habits/${habitId}/complete`, { 
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json' }, 
                     body: JSON.stringify({ image_url: self.selectedImage || null }) 
                 });
                 
-                console.log('Response status:', res.status);
                 const data = await res.json();
-                console.log('Response data:', data);
-                
-                completeBtn.disabled = false;
-                completeBtn.classList.remove('is-loading');
                 
                 if (data.success) {
-                    console.log('Success! Closing modal and refreshing...');
                     self.currentUser.coins = data.user.coins;
                     self.selectedImage = null;
                     closeModal();
@@ -427,8 +414,6 @@ class HabitTrackerApp {
                 }
             } catch (e) {
                 console.error('Error:', e);
-                document.getElementById('completeBtn').disabled = false;
-                document.getElementById('completeBtn').classList.remove('is-loading');
                 self.showErrorModal('Error: ' + e.message);
             }
         };

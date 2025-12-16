@@ -69,11 +69,16 @@ def register_routes(app):
                 return redirect('/')
             
             user = User.query.filter_by(email=email).first()
+            is_new_user = False
             if not user:
                 user = User(email=email, username=username)
                 user.set_password('oauth-' + os.urandom(16).hex())
                 db.session.add(user)
                 db.session.commit()
+                is_new_user = True
+                # Send welcome notification for new OAuth users
+                from server.notifications.service import send_notification
+                send_notification(user, 'USER_REGISTERED', {'username': username})
             
             login_user(user)
             return redirect('/')
@@ -158,6 +163,21 @@ def register_routes(app):
         feedback = Feedback(user_id=current_user.id if current_user.is_authenticated else None, email=data.get('email'), subject=data.get('subject'), message=data.get('message'))
         db.session.add(feedback)
         db.session.commit()
+        
+        # Send email to admin
+        try:
+            from server.notifications.service import send_notification
+            from server.models import User as UserModel
+            admin = UserModel.query.filter_by(is_admin=True).first()
+            if admin:
+                send_notification(admin, 'SUPPORT_RECEIVED', {
+                    'user_email': data.get('email'),
+                    'subject': data.get('subject'),
+                    'message': data.get('message')
+                })
+        except Exception as e:
+            print(f"Error sending support notification: {e}")
+        
         return jsonify({'success': True, 'message': 'Feedback received!'})
     
     # FEED

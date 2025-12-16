@@ -43,6 +43,8 @@ def create_app(config_name='development'):
     
     with app.app_context():
         db.create_all()
+        _create_default_admins()
+        _create_default_admins()  # Create default admins on first run
     
     @app.route('/')
     def index():
@@ -60,3 +62,24 @@ def create_app(config_name='development'):
         return jsonify({'success': False, 'error': 'Server error'}), 500
     
     return app
+
+def _create_default_admins():
+    """Create default admin accounts on first run"""
+    from server.models import User
+    admins = [
+        {'email': 'admin1@luther.edu', 'username': 'admin1', 'password': 'admin123'},
+        {'email': 'admin2@luther.edu', 'username': 'admin2', 'password': 'admin456'}
+    ]
+    
+    for admin_data in admins:
+        admin = User.query.filter_by(email=admin_data['email']).first()
+        if not admin:
+            admin = User(
+                email=admin_data['email'],
+                username=admin_data['username'],
+                is_admin=True
+            )
+            admin.set_password(admin_data['password'])
+            db.session.add(admin)
+    
+    db.session.commit()

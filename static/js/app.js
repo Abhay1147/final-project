@@ -18,7 +18,14 @@ class HabitTrackerApp {
                 this.currentUser = data.user;
                 this.updateNav(true);
                 const page = localStorage.getItem('lastPage') || 'home';
-                this[`show${page[0].toUpperCase() + page.slice(1)}`]?.();
+                // Handle admin page specially
+                if (page === 'admin' && this.currentUser.is_admin) {
+                    this.showAdminPanel();
+                } else if (page === 'createhabit') {
+                    this.showCreateHabit();
+                } else {
+                    this[`show${page[0].toUpperCase() + page.slice(1)}`]?.();
+                }
             } else {
                 this.showLogin();
             }
@@ -330,13 +337,14 @@ class HabitTrackerApp {
     }
 
     showCompleteModal(habitId) {
+        const self = this;
         const modal = `
             <div class="modal is-active" id="completeModal">
-                <div class="modal-background" onclick="document.getElementById('completeModal').classList.remove('is-active'); document.getElementById('completeModal').remove();"></div>
+                <div class="modal-background"></div>
                 <div class="modal-card">
                     <header class="modal-card-head">
                         <p class="modal-card-title">Complete Habit</p>
-                        <button class="delete" aria-label="close" onclick="document.getElementById('completeModal').classList.remove('is-active'); document.getElementById('completeModal').remove();"></button>
+                        <button class="delete" aria-label="close"></button>
                     </header>
                     <section class="modal-card-body">
                         <p>Add a photo of your completion (optional):</p>
@@ -353,14 +361,25 @@ class HabitTrackerApp {
                         <div id="imagePreview"></div>
                     </section>
                     <footer class="modal-card-foot">
-                        <button class="button" onclick="document.getElementById('completeModal').classList.remove('is-active'); document.getElementById('completeModal').remove();">Cancel</button>
-                        <button class="button is-success" onclick="app.completeHabit(${habitId}); document.getElementById('completeModal').classList.remove('is-active'); document.getElementById('completeModal').remove(); return false;">Complete</button>
+                        <button class="button" id="cancelBtn">Cancel</button>
+                        <button class="button is-success" id="completeBtn">Complete</button>
                     </footer>
                 </div>
             </div>
         `;
         document.body.insertAdjacentHTML('beforeend', modal);
         
+        const closeModal = () => {
+            const el = document.getElementById('completeModal');
+            if (el) el.remove();
+        };
+        
+        // Close handlers
+        document.querySelector('#completeModal .modal-background').onclick = closeModal;
+        document.querySelector('#completeModal .delete').onclick = closeModal;
+        document.getElementById('cancelBtn').onclick = closeModal;
+        
+        // File input
         document.getElementById('habitImage').addEventListener('change', (e) => {
             const file = e.target.files[0];
             document.getElementById('fileName').textContent = file ? file.name : 'No file chosen';
@@ -368,53 +387,56 @@ class HabitTrackerApp {
                 const reader = new FileReader();
                 reader.onload = (event) => {
                     document.getElementById('imagePreview').innerHTML = `<img src="${event.target.result}" alt="Preview" style="max-width: 100%; max-height: 200px; border-radius: 5px;">`;
-                    app.selectedImage = event.target.result;
+                    self.selectedImage = event.target.result;
                 };
                 reader.readAsDataURL(file);
             }
         });
-    }
 
-    async completeHabit(habitId) {
-        try {
-            const res = await fetch(`/api/habits/${habitId}/complete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image_url: this.selectedImage || null }) });
-            const data = await res.json();
-            if (data.success) {
-                this.currentUser.coins = data.user.coins;
-                this.selectedImage = null;
-                this.showHome();
-            }
-        } catch (e) {
-            console.error('Error completing habit:', e);
-        }
-   }
-
-    async completeHabitAndRefresh(habitId) {
-        const imageUrl = this.capturedImage || null;
-        try {
-            const res = await fetch(`/api/habits/${habitId}/complete`, { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ image_url: imageUrl }) 
-            });
-            const data = await res.json();
+        // Complete handler
+        document.getElementById('completeBtn').onclick = async () => {
+            console.log('Complete clicked for habit:', habitId);
+            console.log('Selected image:', self.selectedImage ? 'Yes' : 'No');
             
-            if (data.success) {
-                this.currentUser = data.user;
+            try {
+                const completeBtn = document.getElementById('completeBtn');
+                completeBtn.disabled = true;
+                completeBtn.classList.add('is-loading');
                 
-                const modal = document.getElementById('complete-modal');
-                if (modal) modal.classList.remove('is-active');
+                const res = await fetch(`/api/habits/${habitId}/complete`, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ image_url: self.selectedImage || null }) 
+                });
                 
-                this.capturedImage = null;
-                await this.showHome();
-            } else {
-                this.showErrorModal(data.error);
+                console.log('Response status:', res.status);
+                const data = await res.json();
+                console.log('Response data:', data);
+                
+                completeBtn.disabled = false;
+                completeBtn.classList.remove('is-loading');
+                
+                if (data.success) {
+                    console.log('Success! Closing modal and refreshing...');
+                    self.currentUser.coins = data.user.coins;
+                    self.selectedImage = null;
+                    closeModal();
+                    await self.showHome();
+                } else {
+                    self.showErrorModal(data.error || 'Error completing habit');
+                }
+            } catch (e) {
+                console.error('Error:', e);
+                document.getElementById('completeBtn').disabled = false;
+                document.getElementById('completeBtn').classList.remove('is-loading');
+                self.showErrorModal('Error: ' + e.message);
             }
-        } catch (e) {
-            console.error('Error completing habit:', e);
-            this.showErrorModal('Error completing habit');
-        }
+        };
     }
+
+    // ...existing code...
+
+    // ...existing code...
 
     async deleteHabit(habitId) {
         if (!confirm('Delete this habit?')) return;
